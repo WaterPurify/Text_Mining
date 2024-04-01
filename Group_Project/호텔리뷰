@@ -1,1 +1,54 @@
 
+# 코랩을 시작할 때 아래코드를 한 번 돌려줍니다.
+!pip install selenium
+!apt-get update
+!apt install chromium-chromedriver
+!cp /usr/lib/chromium-browser/chromedriver /usr/bin]
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By # class 태그나, id태그의 속성값을 가져오려고 합니다.
+import time
+# colab에서 selenium을 돌리기 위한 옵션들
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument('--headless')
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--disable-dev-shm-usage')
+driver = webdriver.Chrome(options=chrome_options)
+#아고다 이동
+url = "https://www.agoda.com/ko-kr/the-shilla-jeju/hotel/jeju-island-kr.html"
+driver.get(url)
+
+# 페이지 로딩을 위해 충분한 시간 대기
+time.sleep(5)
+# 모든 이용후기를 담을 딕셔너리
+reviews_by_date = {}
+# 페이지 전환을 위한 링크 요소들 찾기
+pagination_links = driver.find_elements(By.CSS_SELECTOR, '.Review-paginator-number')
+# 링크 요소들을 순회하며 페이지 전환
+length = len(pagination_links)
+for link in range(length//2):
+    # JavaScript를 사용하여 클릭
+    driver.execute_script("arguments[0].click();", link)
+    # 페이지 로딩을 위해 충분한 시간 대기
+    time.sleep(5)
+    # 이용후기 요소들 가져오기
+    review_elements = driver.find_elements(By.CLASS_NAME, 'Review-comment')
+    # 각 이용후기 요소에서 텍스트와 날짜 추출하여 딕셔너리에 추가
+    for review_element in review_elements:
+        review_content = review_element.find_element(By.CLASS_NAME, 'Review-comment-body').text.strip()
+        # 리뷰어 정보 요소 가져오기
+        reviewer_info_element = review_element.find_element(By.CLASS_NAME, 'Review-comment-reviewer[data-info-type="stay-detail"]')
+        # 리뷰어 정보 요소에서 날짜 추출
+        date_text = reviewer_info_element.find_element(By.TAG_NAME, 'span').text.strip()
+        # 해당 날짜의 이용후기 리스트에 추가
+        if date_text not in reviews_by_date:
+            reviews_by_date[date_text] = []
+        reviews_by_date[date_text].append(review_content)
+# 날짜별로 이용후기 출력
+for date, reviews in reviews_by_date.items():
+    print("Date:", date)
+    for review in reviews:
+        print(review)
+    print()  # 이용후기 사이에 한 줄 띄기
+# 작업이 끝나면 드라이버 종료
+driver.quit()
