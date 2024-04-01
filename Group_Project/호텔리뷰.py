@@ -42,7 +42,7 @@ pagination_links = driver.find_elements(By.CSS_SELECTOR, '.Review-paginator-numb
 length = len(pagination_links)
 for link in range(length//2):
     # JavaScript를 사용하여 클릭
-    driver.execute_script("arguments[0].click();", link)
+    driver.execute_script("arguments[0].click();", pagination_links[link])
     # 페이지 로딩을 위해 충분한 시간 대기
     time.sleep(5)
     # 이용후기 요소들 가져오기
