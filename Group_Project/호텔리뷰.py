@@ -27,42 +27,121 @@ chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-dev-shm-usage')
 driver = webdriver.Chrome(options=chrome_options)
 #아고다 이동
-url = "https://www.agoda.com/ko-kr/the-shilla-jeju/hotel/jeju-island-kr.html"
+url = 'https://www.agoda.com/the-shilla-jeju/hotel/jeju-island-kr.html'
 driver.get(url)
+
+#호텔리뷰를 찾고 호텔리뷰 개수를 확인
+pagination_links = driver.find_elements(By.CSS_SELECTOR, '.Review-paginator-number')
+
+
+for link in pagination_links:
+    # JavaScript를 사용하여 클릭
+    driver.execute_script("arguments[0].click();", link)
+       # 페이지 로딩을 위해 충분한 시간 대기
+    time.sleep(2)
+        # 이용후기 요소들 가져오기
+    review_num = driver.find_element(By.CLASS_NAME, 'Review__SummaryContainer--left.Review__SummaryContainer__Text').text
+
+
+
+review_num
+
+time.sleep(2)
+# 모든 이용후기를 담을 리스트
+reviews_by_date = {}
+reviews_by_date['review_content'] = []
+reviews_by_date['reviewer_info_element'] = []
+reviews_by_date['date_text'] = []
+
+# 페이지 전환을 위한 링크 요소들 찾기
+pagination_links = driver.find_elements(By.CSS_SELECTOR, '.Review-paginator-number')
+# length = len(pagination_links)
+link = pagination_links[0]
+driver.execute_script("arguments[0].click();", link)
+
+time.sleep(2)
+
 
 """##제주도 신라호텔 리뷰와 날짜를 딕셔너리 형태로 크롤링"""
 
-# 페이지 로딩을 위해 충분한 시간 대기
-time.sleep(5)
-# 모든 이용후기를 담을 딕셔너리
-reviews_by_date = {}
-# 페이지 전환을 위한 링크 요소들 찾기
-pagination_links = driver.find_elements(By.CSS_SELECTOR, '.Review-paginator-number')
-# 링크 요소들을 순회하며 페이지 전환
-length = len(pagination_links)
-for link in range(length//2):
-    # JavaScript를 사용하여 클릭
-    driver.execute_script("arguments[0].click();", pagination_links[link])
-    # 페이지 로딩을 위해 충분한 시간 대기
-    time.sleep(5)
     # 이용후기 요소들 가져오기
-    review_elements = driver.find_elements(By.CLASS_NAME, 'Review-comment')
+review_elements = driver.find_elements(By.CLASS_NAME, 'Review-comment')
     # 각 이용후기 요소에서 텍스트와 날짜 추출하여 딕셔너리에 추가
+for review_element in review_elements:
+
+    # 리뷰
+    review_content = review_element.find_element(By.CLASS_NAME, 'Review-comment-body').text.strip()
+    reviews_by_date['review_content'].append(review_content)
+    
+    
+    # 리뷰어 정보 요소
+    reviewer_info_element = review_element.find_element(By.CLASS_NAME, 'Review-comment-reviewer[data-info-type="stay-detail"]')
+    # reviews_by_date['reviewer_info_element'].append(reviewer_info_element)
+   
+
+    # 리뷰 날짜 
+    date_text = reviewer_info_element.find_element(By.TAG_NAME, 'span').text.strip()
+    reviews_by_date['date_text'].append(date_text)
+
+pagination_links = driver.find_elements(By.CSS_SELECTOR, '.Review-paginator-number')[1]
+driver.execute_script("arguments[0].click();", pagination_links )
+
+
+time.sleep(2)
+
+
+    # 이용후기 요소들 가져오기
+review_elements = driver.find_elements(By.CLASS_NAME, 'Review-comment')
+    # 각 이용후기 요소에서 텍스트와 날짜 추출하여 딕셔너리에 추가
+for review_element in review_elements:
+    
+    # 리뷰
+    review_content = review_element.find_element(By.CLASS_NAME, 'Review-comment-body').text.strip()
+    reviews_by_date['review_content'].append(review_content)
+    
+    
+    # 리뷰어 정보 요소
+    reviewer_info_element = review_element.find_element(By.CLASS_NAME, 'Review-comment-reviewer[data-info-type="stay-detail"]')
+    # reviews_by_date['reviewer_info_element'].append(reviewer_info_element)
+   
+
+    # 리뷰 날짜 
+    date_text = reviewer_info_element.find_element(By.TAG_NAME, 'span').text.strip()
+    reviews_by_date['date_text'].append(date_text)
+
+pagination_links = driver.find_elements(By.CSS_SELECTOR, '.Review-paginator-number')[2]
+driver.execute_script("arguments[0].click();", pagination_links )
+
+time.sleep(2)
+
+for i in tqdm(range(page_count - 2)):
+
+    time.sleep(1)
+    review_elements = driver.find_elements(By.CLASS_NAME, 'Review-comment')
+        # 각 이용후기 요소에서 텍스트와 날짜 추출하여 딕셔너리에 추가
+    
     for review_element in review_elements:
+
+        # 리뷰
         review_content = review_element.find_element(By.CLASS_NAME, 'Review-comment-body').text.strip()
-        # 리뷰어 정보 요소 가져오기
+        reviews_by_date['review_content'].append(review_content)
+        
+        
+        # 리뷰어 정보 요소
         reviewer_info_element = review_element.find_element(By.CLASS_NAME, 'Review-comment-reviewer[data-info-type="stay-detail"]')
-        # 리뷰어 정보 요소에서 날짜 추출
+        # reviews_by_date['reviewer_info_element'].append(reviewer_info_element)
+    
+
+        # 리뷰 날짜 
         date_text = reviewer_info_element.find_element(By.TAG_NAME, 'span').text.strip()
-        # 해당 날짜의 이용후기 리스트에 추가
-        if date_text not in reviews_by_date:
-            reviews_by_date[date_text] = []
-        reviews_by_date[date_text].append(review_content)
-# 날짜별로 이용후기 출력
-for date, reviews in reviews_by_date.items():
-    print("Date:", date)
-    for review in reviews:
-        print(review)
-    print()  # 이용후기 사이에 한 줄 띄기
-# 작업이 끝나면 드라이버 종료
+        reviews_by_date['date_text'].append(date_text)
+
+
+    pagination_links = driver.find_elements(By.CSS_SELECTOR, '.Review-paginator-number')[4]
+    driver.execute_script("arguments[0].click();", pagination_links )
+
+
 driver.quit()
+
+
+reviews_by_date
